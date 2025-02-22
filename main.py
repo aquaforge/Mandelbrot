@@ -16,7 +16,7 @@ SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 900
 SCREEN_FPS = 60
 
-mandelbrot_max_check_iter = 100
+mandelbrot_max_check_iter = 200
 
 field_topleft: complex = None
 INIT_SCALE = 2.0/SCREEN_HEIGHT
@@ -98,7 +98,7 @@ def handle_events():
                 field_topleft.real+pos[0]*field_scale,
                 field_topleft.imag-pos[1]*field_scale)
             print(point)
-            goto_point(point, field_scale/10.0)
+            goto_point(point, field_scale/5.0)
 
     #     if event.type != pg.MOUSEMOTION:
     #         # print(f"{draw_scene.left} {draw_scene.top}")
