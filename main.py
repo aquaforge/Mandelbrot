@@ -14,12 +14,12 @@ COLOR_BACKGROUND = COLOR_WHITE
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 600
-SCREEN_FPS = 30
+SCREEN_FPS = 60
 
-MANDELBROT_MAX_CHECK_ITER = 100
+mandelbrot_max_check_iter = 200
 
-field_topleft = complex(-2.0, 2.0)
-field_scale = 4.0/SCREEN_HEIGHT
+field_topleft = complex(-3.0, 2.0)
+field_scale = 2.0*field_topleft.real/SCREEN_HEIGHT
 
 running = True
 need_redraw = False
@@ -28,21 +28,36 @@ th: threading.Thread = None
 stop_event = threading.Event()
 stop_event.set()
 
-def recalculate() -> None:
+
+def goto_home():
+    global field_topleft
+    global field_scale
+    field_topleft = complex(-3.0, 2.0)
+    field_scale = 4.0/SCREEN_HEIGHT
+    recalculate()
+
+
+def recalculate(new_field: bool = True) -> None:
     global stop_event
     global th
     global field_np
     global need_redraw
+    global mandelbrot_max_check_iter
 
     print("recalculate STARTED")
     stop_event.set()
 
-    field_np = np.full((SCREEN_WIDTH, SCREEN_HEIGHT),
-                       MANDELBROT_MAX_CHECK_ITER+1, dtype=int)
+    if new_field:
+        field_np = np.full((SCREEN_WIDTH, SCREEN_HEIGHT),
+                           0, dtype=int)
+    else:
+        if mandelbrot_max_check_iter < 200:
+            mandelbrot_max_check_iter += 50
     stop_event = threading.Event()
     th = threading.Thread(target=calculate_field,
                           daemon=True, args=(stop_event, field_np))
     th.start()
+    set_caption()
     need_redraw = True
 
 
@@ -67,8 +82,7 @@ def handle_events():
             if event.key == pg.K_ESCAPE:
                 return False
             if event.key == pg.K_HOME:
-                field_topleft = complex(-2.0, 2.0)
-                field_scale = 4.0/SCREEN_HEIGHT
+                goto_home()
 
     #     if event.type != pg.MOUSEMOTION:
     #         # print(f"{draw_scene.left} {draw_scene.top}")
@@ -89,18 +103,20 @@ def handle_events():
 
 def calculate_field(stop_event, arr: np.array):
     global need_redraw
+    global mandelbrot_max_check_iter
     print("calculate_field STARTED")
-    for i in range(SCREEN_WIDTH):
-        for j in range(SCREEN_HEIGHT):
+    for j in range(SCREEN_HEIGHT):
+        for i in range(SCREEN_WIDTH):
             if (not running) or stop_event.is_set():
                 return
             c = complex(field_topleft.real+field_scale*i,
                         field_topleft.imag-field_scale*j)
-            _, k = get_mandelbrot_rate(c, MANDELBROT_MAX_CHECK_ITER)
+            _, k = get_mandelbrot_rate(c, mandelbrot_max_check_iter)
             arr[i, j] = k
             need_redraw = True
             # print(f'{c} - {b}')
     print("calculate_field DONE")
+    # recalculate(False)
 
 
 def draw_scene(sc: pg.Surface):
@@ -110,8 +126,12 @@ def draw_scene(sc: pg.Surface):
         sc.fill(COLOR_BACKGROUND)
         for i in range(SCREEN_WIDTH):
             for j in range(SCREEN_HEIGHT):
-                if field_np[i, j] >= MANDELBROT_MAX_CHECK_ITER:
+                if field_np[i, j] >= mandelbrot_max_check_iter:
                     sc.set_at((i, j), COLOR_BLACK)
+                elif field_np[i, j] < 255:
+                    sc.set_at(
+                        (i, j), (255-field_np[i, j], 255-field_np[i, j], 255-field_np[i, j]))
+
         pg.display.update()
 
 
@@ -120,7 +140,7 @@ def set_caption():
         f'Field: {field_topleft} - '
         f'{complex(
             field_topleft.real+field_scale*SCREEN_WIDTH,
-            field_topleft.imag-field_scale*SCREEN_HEIGHT)} Scale: {field_scale}')
+            field_topleft.imag-field_scale*SCREEN_HEIGHT)} Scale: {field_scale} MAX_ITER: {mandelbrot_max_check_iter}')
 
 
 def main():
@@ -132,7 +152,8 @@ def main():
     set_caption()
 
     clock = pg.time.Clock()
-    recalculate()
+    goto_home()
+    # recalculate()
 
     while running:
         clock.tick(SCREEN_FPS)
