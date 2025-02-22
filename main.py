@@ -12,14 +12,15 @@ COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
 COLOR_BACKGROUND = COLOR_WHITE
 
-SCREEN_WIDTH = 900
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 900
 SCREEN_FPS = 60
 
-mandelbrot_max_check_iter = 200
+mandelbrot_max_check_iter = 100
 
-field_topleft = complex(-3.0, 2.0)
-field_scale = 2.0*field_topleft.real/SCREEN_HEIGHT
+field_topleft: complex = None
+INIT_SCALE = 2.0/SCREEN_HEIGHT
+field_scale: float = None
 
 running = True
 need_redraw = False
@@ -30,10 +31,16 @@ stop_event.set()
 
 
 def goto_home():
+    goto_point(complex(-0.5, 0),INIT_SCALE)
+
+
+def goto_point(center: complex, scale: float):
+    """центрирование на точке с нужным масштабом"""
     global field_topleft
     global field_scale
-    field_topleft = complex(-3.0, 2.0)
-    field_scale = 4.0/SCREEN_HEIGHT
+    field_scale = scale
+    field_topleft = center+complex(-field_scale*SCREEN_WIDTH/2,
+                            field_scale*SCREEN_HEIGHT/2)
     recalculate()
 
 
@@ -113,8 +120,8 @@ def calculate_field(stop_event, arr: np.array):
                         field_topleft.imag-field_scale*j)
             _, k = get_mandelbrot_rate(c, mandelbrot_max_check_iter)
             arr[i, j] = k
-            need_redraw = True
-            # print(f'{c} - {b}')
+        need_redraw = True
+        # print(f'{c} - {b}')
     print("calculate_field DONE")
     # recalculate(False)
 
@@ -122,6 +129,7 @@ def calculate_field(stop_event, arr: np.array):
 def draw_scene(sc: pg.Surface):
     global need_redraw
     if need_redraw:
+        print(need_redraw)
         need_redraw = False
         sc.fill(COLOR_BACKGROUND)
         for i in range(SCREEN_WIDTH):
@@ -140,7 +148,7 @@ def set_caption():
         f'Field: {field_topleft} - '
         f'{complex(
             field_topleft.real+field_scale*SCREEN_WIDTH,
-            field_topleft.imag-field_scale*SCREEN_HEIGHT)} Scale: {field_scale} MAX_ITER: {mandelbrot_max_check_iter}')
+            field_topleft.imag-field_scale*SCREEN_HEIGHT)} Scale: {INIT_SCALE/field_scale:.{2}f} Iter: {mandelbrot_max_check_iter}')
 
 
 def main():
@@ -149,11 +157,8 @@ def main():
 
     pg.init()
     sc = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    set_caption()
-
     clock = pg.time.Clock()
     goto_home()
-    # recalculate()
 
     while running:
         clock.tick(SCREEN_FPS)
