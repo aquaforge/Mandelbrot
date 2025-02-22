@@ -138,7 +138,6 @@ def calculate_field(stop_event, arr: np.array):
 def draw_scene(sc: pg.Surface):
     global need_redraw
     if need_redraw:
-        print(need_redraw)
         need_redraw = False
         sc.fill(COLOR_BACKGROUND)
         for i in range(SCREEN_WIDTH):
