@@ -31,7 +31,7 @@ stop_event.set()
 
 
 def goto_home():
-    goto_point(complex(-0.5, 0),INIT_SCALE)
+    goto_point(complex(-0.5, 0), INIT_SCALE)
 
 
 def goto_point(center: complex, scale: float):
@@ -40,7 +40,7 @@ def goto_point(center: complex, scale: float):
     global field_scale
     field_scale = scale
     field_topleft = center+complex(-field_scale*SCREEN_WIDTH/2,
-                            field_scale*SCREEN_HEIGHT/2)
+                                   field_scale*SCREEN_HEIGHT/2)
     recalculate()
 
 
@@ -90,6 +90,15 @@ def handle_events():
                 return False
             if event.key == pg.K_HOME:
                 goto_home()
+
+        if event.type == pg.MOUSEBUTTONUP:
+            pos = pg.mouse.get_pos()
+            # print (pos)
+            point = complex(
+                field_topleft.real+pos[0]*field_scale,
+                field_topleft.imag-pos[1]*field_scale)
+            print(point)
+            goto_point(point, field_scale/10.0)
 
     #     if event.type != pg.MOUSEMOTION:
     #         # print(f"{draw_scene.left} {draw_scene.top}")
